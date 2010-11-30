@@ -1,0 +1,176 @@
+* Org Workflow
+** A collection and processing tool for doing GTD in Org
+* Copyright
+* Collection
+** Collections
+   A collection definition is a description of a "bucket" that contains in-box items that need to be processed.  Some typical examples are:
+   - An org-headline that is the target for any 'remember' notes.
+   - A directory full of files (your desktop, downloads folder, etc.)
+   - An email folder.
+
+   When you define a collection, you will need to give it a Human Readable Name, an identifier (typically its 'location') and the type of
+   its contents.
+
+   For instance, your definitions might be defined like this:
+#+BEGIN_SRC emacs-lisp
+(setq org-workflow-collections
+      '(("GTD.org::Inbox" "Org Inbox" 'org-headline)
+		("~/Desktop" "Desktop" 'file)
+		("~/Downloads" "Downloads Directory" 'file)
+        ("Inbox" "Email Inbox" 'mac-message)))
+#+END_SRC
+
+** Types 
+   Types obviously define what are inside the collections. During the processing phase, org-workflow will provide and perform different
+   actions based on the type of item in your collection.  Files might be moved, or deleted, headlines might be re-filed, or emails might be
+   marked as read (for instance).
+
+   Org workflow comes with 2 default types provided, and making more types should prove not too difficult with some emacs-lisp knowledge.
+*** File
+	A physical file on the file-system. 
+
+#+srcname: type-file 
+#+begin_src emacs-lisp
+(defvar org-workflow-type:file
+  '((collector . org-workflow-collect-file)
+    (kill . delete-file)
+	(store . org-workflow-file-rename)
+	(project . org-workflow-project-default)
+	(go . org-workflow-go-default)
+	(delegate)
+	(later . org-workflow-later-default)
+	(maybe . org-workflow-maybe-default)))
+#+end_src
+
+*** TODO Headline
+
+#+srcname: type-headline
+#+begin_src emacs-lisp
+(defvar org-workflow-type:headline
+  '((colllector . org-workflow-collect-headline)
+    (kill . org-workflow-kill-headline)
+    
+#+end_src
+
+
+* Processing
+** The Processing Interface
+   Once the collector has finished collecting everything in your various inboxes, we come to the point where a hu-mon must actually do
+   something with it.  Org-workflow is built with a GTD methodology in mind, but if you wanted to, you could change things to fit in with an
+   alternate workflow. 
+
+   For every item that is found in one of the collections, a series of actions can be performed.  The aim of the actions interface is to
+   provide a consistent series of keystrokes and methods for working with disparate items.  Delegating an org-headline would mark that
+   headlines TODO state as "WAITING" and prompt for a tag as to who it is to be delegated to.  Delegating an email would forward it to a
+   given email address, and also create a new headline with a WAITING state, based on the subject of that email.  
+
+   Not every type will have an action associated to it--for instance, delegating a file (currently) makes no sense.  
+
+   A window will pop up so that you can begin processing each item in the inboxen in turn.  
+
+*** Keybindings
+	
+	- k :: Kill / Trash 
+    - s :: Store / File for reference
+		   Removes any TODO state on the item (if applicable), and refile/move to a given location
+    - p :: Project
+		   Make a new item into a headline with a TODO state of PROJECT.  Additionally, this will kick off the projectify interface for
+		   that item, so that new action items can be attached to the project
+    - g :: Go / DO!
+		   Do this thing!  Starts a clock, and times you for 2 minutes.  Keeps track of how long the task took so you can see the progress
+		   of your estimating. 
+    - d :: Delegate 
+		   Make a new headline based on the item of the TODO state "DELEGATED".  Additionally, prompt for a tag on this item to represent who
+		   this is delegated to.
+    - l :: Later / Deferred 
+		   Make a new TODO item, and prompt for a SCHEDULED date.
+    - m :: Maybe / Someday
+		   make a new SOMEDAY item, and file it in the default someday spot.  
+
+*** Code
+
+#+srcname: show-interface
+#+begin_src emacs-lisp
+(defun org-workflow-show-interface (collection title data)
+  "Show the Workflow interface" 
+  (pop-to-buffer (get-buffer-create "*org-workflow*"))
+  (buffer-disable-undo)
+  (toggle-read-only 0)
+  (delete-region (point-min) (point-max))
+  (dolist (info org-workflow-keylist)
+          (insert (format "(%s)%s  " (car info) (cdr info))))
+  (newline)
+  (insert "-----------------------------------------------------------------------")
+  (newline)
+  (insert (format "Collection: %s" collection))
+  (newline)
+  (insert (format "Title: %s" title))
+  (newline)
+  (insert (format "%s" data))
+  (toggle-read-only 1)
+  (use-local-map org-workflow-keymap)
+  (goto-char (point-min))
+  (longlines-mode 1))
+#+end_src
+
+#+srcname: bindings
+#+begin_src emacs-lisp
+  (defvar org-workflow-keylist
+    '(("k" . org-workflow-kill)
+      ("s" . org-workflow-store)
+      ("p" . org-workflow-project)
+      ("g" . org-workflow-go)
+      ("d" . org-workflow-delegate)
+      ("l" . org-workflow-later)
+      ("m" . org-workflow-maybe)
+      ("n" . org-workflow-next)))
+  
+  (defvar org-workflow-keymap (make-sparse-keymap))
+  
+  (dolist (info org-workflow-keylist)
+     (define-key org-workflow-keymap (car info) (cdr info)))
+#+end_src
+
+**** Test Code 
+	 This code should pop up the workflow interface.
+
+#+BEGIN_SRC emacs-lisp
+(org-workflow-show-interface "Test-Collection" "Test" '())
+#+END_SRC
+
+
+** Gathering All Collections   
+** Processing Collections - Actions
+   An action will return a small list representing its success, what it returns is:
+   ([T or NIL] "Human Readable Result") 
+
+   If a non-nil value is in the car of the result, then the task was successful, and it can be removed from the list.  Otherwise it was
+   unsuccessful, and the user should do something with the task. 
+*** Trash
+	Trashing items simply deletes them.  Gone.
+
+#+srcname: trash
+#+begin_src 
+(defun org-workflow-trash (item)
+  
+#+end_src
+ 
+*** Store
+
+*** Projectify
+	
+*** Go 
+	This one is really dumb, It beeps at you, and then does nothing. 
+#+srcname: go 
+#+begin_src 
+(defun org-workflow-go (item) 
+  "Do an item inside of a workflow list.
+Sets a timer, and then alerts the user when the time is up."
+  (run-at-time "2-min" 0 (lambda () 
+    (beep)))
+  '(nil "Time Up! Now do something with this task."))
+
+*** Delegate
+
+*** Defer
+

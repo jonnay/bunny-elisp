@@ -1,0 +1,58 @@
+Chunks of my elisp.  Some of these are better then others.
+
+Maintained
+----------
+- file-journal.el
+- free-tagging.el
+- i-ching.el
+- jiseki.el
+- save-and-dwim.el
+- todochiku.el
+
+In Progress
+-----------
+- org-babel-mozrepl.el
+- org-babel-scheme.org
+- rporg
+
+Unmaintained
+------------
+- twit.el :(  I just don't have time to make an open auth emacs package
+- org-jira.el
+- asp-dot-net.el
+- atg.el
+- bunny-jira.el
+- cruisecontrol.el
+- work-timer.el
+- emdroid.el
+- wsh-repl.el
+- yahoo-weather.el
+
+In progress, but not worked on
+------------------------------
+- auto-complete-href.el
+- org-workflow.org
+- deck.el
+- org-pocketmod.el
+- validate.el
+- mojo.el
+- open-auth.el  :( see?  no time.
+
+Abandoned Ideas
+---------------
+- planner-rtm.el
+- selenemacs.el
+- firebridge.el
+
+
+Packages I should really look at
+--------------------------------
+- ecb-minimap.el
+- everest.el
+- magick.el
+- pcloud.el
+- sparklines.el
+- ssh.el
+- status-bar.el
+- the-cheat.el
+
